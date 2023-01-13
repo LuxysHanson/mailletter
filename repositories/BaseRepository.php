@@ -24,8 +24,8 @@ abstract class BaseRepository implements IBaseRepository
 
     public function find(): Query
     {
-        $model = $this->getModel();
-        return $this->queryBuilder->from($model::tableName());
+        $tbl_name = $this->getTableName();
+        return $this->queryBuilder->from($tbl_name);
     }
 
     /**
@@ -65,6 +65,12 @@ abstract class BaseRepository implements IBaseRepository
         }
 
         throw new NotFoundHttpException(Yii::t('app', 'Данные не найдены'));
+    }
+
+    protected function getTableName(): string
+    {
+        $model = $this->getModel();
+        return $model::tableName();
     }
 
 }

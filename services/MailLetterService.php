@@ -12,6 +12,7 @@ use app\repositories\CityRepository;
 use app\repositories\MailMessageRepository;
 use app\repositories\MailRepository;
 use app\repositories\PostRepository;
+use Exception;
 use Yii;
 
 /**
@@ -78,7 +79,7 @@ class MailLetterService
             $tbl_city_ids = $this->cityRepository->getCitiesForMailingLetters();
 
             foreach ($tbl_city_ids as $id) {
-                $this->checkMailingListByCity($id);
+                $this->checkMailingListByCity((int) $id);
             }
 
         } else {
@@ -110,18 +111,27 @@ class MailLetterService
                     // Получаем подписчиков по  этому городу
                     $subscriber_list = $this->mailRepository->getSubscriberListByCityId($city_id);
 
-                    $mailEntity = $this->formMailEntity($desired_post);
-                    $mailMessage = $this->createMailMessage($mailEntity, $desired_post, $subscriber_list->count());
+                    $transaction = Yii::$app->db->beginTransaction();
 
-                    foreach ($subscriber_list as $row) {
-                        $mailEntity->setEmail($row['email']);
+                    try {
+                        $mailEntity = $this->formMailEntity($desired_post);
+                        $mailMessage = $this->createMailMessage($mailEntity, $desired_post, $subscriber_list->count());
 
-                        Yii::$app->queue->push(new EmailSendJob([
-                            'entity' => $mailEntity,
-                            'subscribe_id' => $row['id'],
-                            'message_id' => $mailMessage->id
-                        ]));
+                        foreach ($subscriber_list as $row) {
+                            $mailEntity->setEmail($row['email']);
+
+                            Yii::$app->queue->push(new EmailSendJob([
+                                'entity' => $mailEntity,
+                                'subscribeId' => $row['id'],
+                                'messageId' => $mailMessage->id
+                            ]));
+                        }
+                    } catch (Exception $e) {
+                        $transaction->rollBack();
+                        Yii::$app->errorHandler->logException($e);
                     }
+
+                    $transaction->commit();
                 }
             }
         }
@@ -140,8 +150,8 @@ class MailLetterService
 
             // Есть ли горящее по текущему посту (за последний месяц)
             $mail_message_per_month = $this->mailMessageRepository->getMonthlyMailer($item);
-            if ($mail_message_per_month) {
-                return $this->hydrator->hydrate(Post::class, $item);
+            if (!$mail_message_per_month) {
+                return Yii::createObject(Post::class, $item);
             }
         }
 
@@ -205,7 +215,7 @@ class MailLetterService
     {
 
         /** @var MailMessage $mailMessage */
-        $mailMessage = $this->hydrator->hydrate(MailMessage::class, [
+        $mailMessage = Yii::createObject(MailMessage::class, [
             'title' => Yii::t('app', 'Рассылка писем!'),
             'titleBig' => Yii::t('app', 'Рассылка писем!'),
             'content' => $mailEntity->getContent(),

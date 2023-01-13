@@ -45,7 +45,7 @@ class MailMessageRepository extends BaseRepository
             ->andWhere(['>', 'DATE(addDate)', date('Y-m-d', strtotime('-1 month'))])
             ->andWhere(['mailType' => 0])
             ->andWhere(['state' => MailMessageStateEnum::STATE_FINISH])
-            ->andWhere(['id' => $post['id']])
+            ->andWhere(['post_id' => (int) $post['id']])
             ->orderBy('addDate DESC')
             ->createCommand();
 

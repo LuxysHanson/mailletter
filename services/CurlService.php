@@ -4,6 +4,7 @@ namespace app\services;
 
 use app\components\exceptions\CurlException;
 use app\models\entities\CurlEntity;
+use Yii;
 
 /**
  *
@@ -42,10 +43,11 @@ class CurlService
         $result = json_decode($response, true);
 
         if ($code != 200) {
-            throw new CurlException($result['message'], $code);
+            $exception = new CurlException($result['message'], $code);
+            Yii::$app->errorHandler->logException($exception);
         }
 
-        return $result;
+        return $result ?: [];
     }
 
     /**
