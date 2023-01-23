@@ -1,4 +1,19 @@
 actor: Tester
+coverage:
+    #c3_url: http://localhost:8080/index-test.php/
+    enabled: true
+    #remote: true
+    #remote_config: '../codeception.yml'
+    whitelist:
+        include:
+            - models/*
+            - controllers/*
+            - repositories/*
+            - services/*
+            - components/*
+            - controllers/*
+            - commands/*
+            - mail/*
 bootstrap: _bootstrap.php
 paths:
     tests: tests
@@ -12,16 +27,3 @@ modules:
     config:
         Yii2:
             configFile: 'config/test.php'
-
-# To enable code coverage:
-#coverage:
-#    #c3_url: http://localhost:8080/index-test.php/
-#    enabled: true
-#    #remote: true
-#    #remote_config: '../codeception.yml'
-#    whitelist:
-#        include:
-#            - models/*
-#            - controllers/*
-#            - commands/*
-#            - mail/*

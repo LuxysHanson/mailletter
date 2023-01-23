@@ -16,6 +16,8 @@ use Yii;
 class CurlService
 {
 
+    protected $status_code;
+
     /**
      * @var CurlEntity
      */
@@ -39,15 +41,20 @@ class CurlService
         $this->setCurlParams($curl);
 
         $response = curl_exec($curl);
-        $code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $this->status_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         $result = json_decode($response, true);
 
-        if ($code != 200) {
-            $exception = new CurlException($result['message'], $code);
+        if ($this->status_code != 200) {
+            $exception = new CurlException($result['message'], $this->status_code);
             Yii::$app->errorHandler->logException($exception);
         }
 
         return $result ?: [];
+    }
+
+    public function getStatusCode()
+    {
+        return $this->status_code;
     }
 
     /**
